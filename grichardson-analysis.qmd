@@ -1,0 +1,20 @@
+```{r}
+my_data <- readRDS(r"(\\duhsnas-pri.dhe.duke.edu\dusom_mgm-silver\All_Staff\Lab members\Noah\scRNAseq\Corticogenesis\DiBella\Workspace\RDS\DiBella_scRNAseq.rds)")
+
+
+```
+
+```{r}
+install.packages("tidyverse")
+install.packages("janitor")
+library(tidyverse)
+library(janitor)
+```
+
+```{r}
+# Correct way to extract just the filtered metadata table
+apical_metadata <- my_data@meta.data |>
+  filter(NewcellType == "Apical Progenitors")
+
+```
+
