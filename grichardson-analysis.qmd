@@ -1,14 +1,23 @@
 ```{r}
-my_data <- readRDS(r"(\\duhsnas-pri.dhe.duke.edu\dusom_mgm-silver\All_Staff\Lab members\Noah\scRNAseq\Corticogenesis\DiBella\Workspace\RDS\DiBella_scRNAseq.rds)")
+
 
 
 ```
 
 ```{r}
 install.packages("tidyverse")
+install.packages("Seurat")
+install.packages("patchwork")
 install.packages("janitor")
+install.packages("SeuratObject")
 library(tidyverse)
 library(janitor)
+library(Seurat)
+library(patchwork)
+library(SeuratObject)
+
+my_data <- readRDS(r"(\\duhsnas-pri.dhe.duke.edu\dusom_mgm-silver\All_Staff\Lab members\Noah\scRNAseq\Corticogenesis\DiBella\Workspace\RDS\DiBella_scRNAseq.rds)")
+my_data
 ```
 
 ```{r}
@@ -17,6 +26,7 @@ library(janitor)
 corrected_counts <- my_data@assays$RNA$counts
 
 # 2. Create the new Seurat Object (fixing the typo in CreateSeuratObject)
+library(Seurat)
 my_object <- CreateSeuratObject(counts = corrected_counts)
 
 
