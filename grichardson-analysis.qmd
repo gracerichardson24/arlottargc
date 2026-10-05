@@ -13,8 +13,15 @@ library(janitor)
 
 ```{r}
 # Correct way to extract just the filtered metadata table
-apical_metadata <- my_data@meta.data |>
-  filter(NewcellType == "Apical Progenitors")
+# 1. Extract the actual counts matrix (substituting 'RNA' if your assay name is different)
+corrected_counts <- my_data@assays$RNA$counts
+
+# 2. Create the new Seurat Object (fixing the typo in CreateSeuratObject)
+my_object <- CreateSeuratObject(counts = corrected_counts)
+
+
+#apical_metadata <- my_data@meta.data |>
+  #filter(New_cellType == "Apical progenitors")
 
 ```
 
