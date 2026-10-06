@@ -97,6 +97,72 @@ dpi = 600
 ```{r}
 library(dplyr)
 
+candidate_table <- do.call(
+  rbind,
+  lapply(genes, function(g) {
+
+    if (!g %in% rownames(E15_AP)) {
+      return(data.frame(
+        Gene = g,
+        MeanExpr = NA,
+        PercentExpressing = NA,
+        NumCellsExpressing = NA,
+        MaxExpr = NA
+      ))
+    }
+
+    expr <- FetchData(E15_AP, vars = g)[,1]
+
+    data.frame(
+      Gene = g,
+      MeanExpr = round(mean(expr), 3),
+      PercentExpressing = round(100 * mean(expr > 0), 1),
+      NumCellsExpressing = sum(expr > 0),
+      MaxExpr = round(max(expr), 3)
+    )
+  })
+)
+
+candidate_table %>%
+  arrange(desc(PercentExpressing))
+
+View(candidate_table)
+
+write.csv(
+  candidate_table,
+  file = "E15_AP_candidate_expression_table.csv",
+  row.names = FALSE
+)
+```
+```{r}
+library(tidyverse)
+library(Seurat)
+library(patchwork)
+
+# ----------------------------
+# E15 subsets
+# ----------------------------
+
+E15 <- subset(
+  arlottaobj,
+  subset = orig.ident == "E15"
+)
+
+Idents(E15) <- "New_cellType"
+
+# Check exact AP label if needed
+table(E15$New_cellType)
+
+# Replace with exact label if different
+E15_AP <- subset(
+  E15,
+  subset = New_cellType == "Apical progenitors"
+)
+
+# ----------------------------
+# Candidate genes
+# ----------------------------
+
 genes <- c(
   "Twf2",
   "Bag3",
@@ -113,33 +179,154 @@ genes <- c(
   "Tmem167a"
 )
 
+# Keep only genes present in dataset
+genes_present <- genes[genes %in% rownames(E15)]
+
+missing_genes <- genes[!genes %in% rownames(E15)]
+
+cat(
+  "\nMissing genes:\n"
+)
+
+print(missing_genes)
+
+# ----------------------------
+# Cell type UMAP
+# ----------------------------
+
+p_celltypes <- DimPlot(
+  E15,
+  group.by = "New_cellType",
+  label = TRUE,
+  repel = TRUE,
+  pt.size = 0.3
+) +
+  ggtitle("E15 Cell Types")
+
+ggsave(
+  "E15_cellmap.png",
+  p_celltypes,
+  width = 12,
+  height = 10,
+  dpi = 600
+)
+
+# ----------------------------
+# FeaturePlot grid
+# ----------------------------
+
+p_features <- FeaturePlot(
+  E15,
+  features = genes_present,
+  reduction = "umap",
+  keep.scale = "all",
+  order = TRUE,
+  cols = c("grey95", "firebrick3"),
+  ncol = 3
+)
+
+ggsave(
+  "E15_gene_expression.png",
+  p_features,
+  width = 16,
+  height = 12,
+  dpi = 600
+)
+
+# ----------------------------
+# DotPlot across cell types
+# ----------------------------
+
+p_dot <- DotPlot(
+  E15,
+  features = genes_present,
+  group.by = "New_cellType"
+) +
+  RotatedAxis() +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    )
+  )
+
+ggsave(
+  "E15_DotPlot.png",
+  p_dot,
+  width = 14,
+  height = 10,
+  dpi = 600
+)
+
+# ----------------------------
+# Candidate table
+# ----------------------------
+
 candidate_table <- do.call(
   rbind,
-  lapply(genes, function(g) {
+  lapply(genes_present, function(g) {
 
-    expr <- FetchData(E15_AP, vars = g)[,1]
+    expr <- FetchData(
+      E15_AP,
+      vars = g
+    )[,1]
 
     data.frame(
       Gene = g,
       MeanExpr = round(mean(expr), 3),
-      PercentExpressing = round(100 * mean(expr > 0), 1),
+      PercentExpressing = round(
+        100 * mean(expr > 0),
+        1
+      ),
       NumCellsExpressing = sum(expr > 0),
       MaxExpr = round(max(expr), 3)
     )
-
   })
 )
 
 candidate_table <- candidate_table %>%
   arrange(desc(PercentExpressing))
 
-candidate_table
+print(candidate_table)
 
-# Save table
 write.csv(
   candidate_table,
   "E15_AP_candidate_expression_table.csv",
   row.names = FALSE
 )
+
+# ----------------------------
+# Average expression by cell type
+# ----------------------------
+
+avg_exp <- AverageExpression(
+  E15,
+  features = genes_present,
+  group.by = "New_cellType"
+)$RNA
+
+write.csv(
+  avg_exp,
+  "E15_average_expression_by_celltype.csv"
+)
+
+# ----------------------------
+# Top AP markers
+# ----------------------------
+
+AP_markers <- FindMarkers(
+  E15,
+  ident.1 = "Apical progenitors",
+  only.pos = TRUE,
+  min.pct = 0.25,
+  logfc.threshold = 0.25
+)
+
+write.csv(
+  AP_markers,
+  "E15_ApicalProgenitor_Markers.csv"
+)
+
+head(AP_markers)
 ```
 
