@@ -35,3 +35,111 @@ my_object <- CreateSeuratObject(counts = corrected_counts)
 
 ```
 
+```{r}
+# Basic summary
+my_data
+
+# Metadata columns
+colnames(my_data@meta.data)
+
+# Number of cells and genes
+dim(my_data)
+
+# View metadata
+head(my_data@meta.data)
+
+# Existing clusters
+table(Idents(my_data))
+
+# UMAP
+DimPlot(my_data, reduction = "umap", label = TRUE)
+
+# List assays
+Assays(my_data)
+
+# Default assay
+DefaultAssay(my_data)
+```
+
+```{r}
+genes <- c(
+  "Twf2",
+  "Bag3",
+  "Dync1li2",
+  "Gss",
+  "Rbx1",
+  "Slc17a7",
+  "Slc17a1",
+  "Slc17a8",
+  "Slc17a6",
+  "Nfrkb",
+  "Xylt2",
+  "Sapcd2",
+  "Tmem167a"
+)
+
+d <- DotPlot(
+  E15,
+  features = genes,
+  group.by = "New_cellType"
+) +
+  RotatedAxis()
+
+ggsave(
+"E15_dotplot.png",
+plot = d,
+width = 12,
+height = 10,
+dpi = 600
+)
+```
+
+```{r}
+library(dplyr)
+
+genes <- c(
+  "Twf2",
+  "Bag3",
+  "Dync1li2",
+  "Gss",
+  "Rbx1",
+  "Slc17a7",
+  "Slc17a1",
+  "Slc17a8",
+  "Slc17a6",
+  "Nfrkb",
+  "Xylt2",
+  "Sapcd2",
+  "Tmem167a"
+)
+
+candidate_table <- do.call(
+  rbind,
+  lapply(genes, function(g) {
+
+    expr <- FetchData(E15_AP, vars = g)[,1]
+
+    data.frame(
+      Gene = g,
+      MeanExpr = round(mean(expr), 3),
+      PercentExpressing = round(100 * mean(expr > 0), 1),
+      NumCellsExpressing = sum(expr > 0),
+      MaxExpr = round(max(expr), 3)
+    )
+
+  })
+)
+
+candidate_table <- candidate_table %>%
+  arrange(desc(PercentExpressing))
+
+candidate_table
+
+# Save table
+write.csv(
+  candidate_table,
+  "E15_AP_candidate_expression_table.csv",
+  row.names = FALSE
+)
+```
+
