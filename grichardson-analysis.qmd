@@ -62,6 +62,58 @@ DefaultAssay(my_data)
 ```
 
 ```{r}
+library(tidyverse)
+library(janitor)
+library(Seurat)
+library(patchwork)
+library(SeuratObject)
+# Reload object if needed
+arlottaobj <- my_data
+
+# Create E15 subset
+E15 <- subset(
+  arlottaobj,
+  subset = orig.ident == "E15"
+)
+
+# Set identities to cell types
+Idents(E15) <- "New_cellType"
+
+# Check available cell type names
+table(E15$New_cellType)
+
+# Recreate E15 subset
+E15 <- subset(
+  arlottaobj,
+  subset = orig.ident == "E15"
+)
+
+# Use cell type annotations as identities
+Idents(E15) <- "New_cellType"
+
+# Inspect available cell types
+print(table(E15$New_cellType))
+
+# Find cell types containing "Apical"
+apical_label <- grep(
+  "Apical",
+  unique(E15$New_cellType),
+  value = TRUE,
+  ignore.case = TRUE
+)
+
+print(apical_label)
+
+# Create apical progenitor subset
+E15_AP <- subset(
+  E15,
+  subset = New_cellType == apical_label[1]
+)
+
+# Verify
+print(E15_AP)
+dim(E15_AP)
+
 genes <- c(
   "Twf2",
   "Bag3",
@@ -75,7 +127,12 @@ genes <- c(
   "Nfrkb",
   "Xylt2",
   "Sapcd2",
-  "Tmem167a"
+  "Tmem167a",
+  "Paip2b",
+  "Paip2",
+  "Plppr1",
+  "Khdrbs2",
+  "Wwp2"
 )
 
 d <- DotPlot(
@@ -176,7 +233,12 @@ genes <- c(
   "Nfrkb",
   "Xylt2",
   "Sapcd2",
-  "Tmem167a"
+  "Tmem167",
+  "Paip2b",
+  "Paip2",
+  "Plppr1",
+  "Khdrbs2",
+  "Wwp2"
 )
 
 # Keep only genes present in dataset
